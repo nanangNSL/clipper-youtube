@@ -3,9 +3,59 @@
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('ffmpeg-static');
 
-const { OUT_W, OUT_H, FG_W } = require('./config');
+const {
+  OUT_W,
+  OUT_H,
+  FG_W,
+  EDGE_CROP,
+  COLOR_GRADE,
+  SHARPEN,
+  MOTION_BG,
+  MOTION_OVERSCAN,
+  MOTION_X_PERIOD,
+  MOTION_Y_PERIOD,
+} = require('./config');
 
 ffmpeg.setFfmpegPath(ffmpegPath);
+
+/**
+ * Build the blurred background chain. When motion is enabled the crop window
+ * slowly drifts using time-based (sin/cos) expressions, giving a parallax feel
+ * without resampling the framerate (only the position animates, size is fixed).
+ */
+function buildBackgroundChain() {
+  if (!MOTION_BG) {
+    return (
+      `[bgsrc]scale=${OUT_W}:${OUT_H}:force_original_aspect_ratio=increase,` +
+      `crop=${OUT_W}:${OUT_H},boxblur=22:2,eq=brightness=-0.16:saturation=1.1[bg]`
+    );
+  }
+
+  const bw = Math.round(OUT_W * MOTION_OVERSCAN);
+  const bh = Math.round(OUT_H * MOTION_OVERSCAN);
+  // Drift within the available slack; offset stays inside [0, slack] for all t.
+  const x = `(iw-${OUT_W})/2+sin(t/${MOTION_X_PERIOD})*(iw-${OUT_W})/3`;
+  const y = `(ih-${OUT_H})/2+cos(t/${MOTION_Y_PERIOD})*(ih-${OUT_H})/3`;
+  return (
+    `[bgsrc]scale=${bw}:${bh}:force_original_aspect_ratio=increase,` +
+    `crop=${OUT_W}:${OUT_H}:x='${x}':y='${y}',` +
+    `boxblur=22:2,eq=brightness=-0.16:saturation=1.1[bg]`
+  );
+}
+
+/**
+ * Build the foreground chain: optional edge crop (removes corner watermarks/
+ * logos), scale to a fixed width, then color grade + sharpen for a fresh edit.
+ */
+function buildForegroundChain() {
+  const parts = [];
+  if (EDGE_CROP > 0) {
+    const keep = (1 - 2 * EDGE_CROP).toFixed(4);
+    parts.push(`crop=iw*${keep}:ih*${keep}`);
+  }
+  parts.push(`scale=${FG_W}:-2`, 'setsar=1', COLOR_GRADE, SHARPEN);
+  return `[fgsrc]${parts.join(',')}[fg]`;
+}
 
 /**
  * Compose the vertical TikTok video: blurred background fill, centered
@@ -32,13 +82,10 @@ function composeVideo({ rawPath, outPath, hookPng, footerPng, footerDim }) {
     const filters = [];
     // Split source into background + foreground.
     filters.push('[0:v]split=2[bgsrc][fgsrc]');
-    // Blurred, slightly darkened background that covers the whole canvas.
-    filters.push(
-      `[bgsrc]scale=${OUT_W}:${OUT_H}:force_original_aspect_ratio=increase,` +
-        `crop=${OUT_W}:${OUT_H},boxblur=24:3,eq=brightness=-0.18[bg]`
-    );
-    // Foreground scaled to a fixed width, height auto (even).
-    filters.push(`[fgsrc]scale=${FG_W}:-2[fg]`);
+    // Moving blurred background (parallax) that covers the whole canvas.
+    filters.push(buildBackgroundChain());
+    // Foreground: edge-cropped (anti-watermark), scaled, color-graded + sharpened.
+    filters.push(buildForegroundChain());
     // Center foreground over background.
     filters.push('[bg][fg]overlay=(W-w)/2:(H-h)/2[base]');
 
@@ -64,9 +111,10 @@ function composeVideo({ rawPath, outPath, hookPng, footerPng, footerDim }) {
       .complexFilter(filters, 'outv')
       .outputOptions([
         '-map', '0:a?',
+        '-map_metadata', '-1', // strip source metadata (avoid "imported" signals)
         '-c:v', 'libx264',
         '-preset', 'veryfast',
-        '-crf', '23',
+        '-crf', '22',
         '-pix_fmt', 'yuv420p',
         '-c:a', 'aac',
         '-b:a', '128k',

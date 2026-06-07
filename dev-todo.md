@@ -87,3 +87,40 @@ file sesuai kolom `title` (fallback ke index), plus download ZIP semua hasil. Se
 - Bulk diproses asinkron (job in-memory) + polling agar tidak kena timeout HTTP.
 - Nama file di-sanitize untuk Windows (`<>:"/\|?*` → `_`), unik (append -1, -2 bila bentrok).
 - Naikkan MAX_CLIP_SECONDS jadi 300 dtk agar preset 5 menit valid.
+
+---
+
+## Originalitas Konten (anti-flag TikTok) — 2026-06-07
+
+**Deskripsi:** Memperbaiki pipeline video agar hasil TIDAK dianggap "konten tidak orisinal /
+berkualitas rendah" oleh TikTok (dan platform sejenis). Sasaran sesuai pedoman TikTok:
+(1) hilangkan kemungkinan **watermark/logo sumber** dengan crop tepi, (2) tambahkan **editing
+kreatif baru** (background bergerak/parallax, color grading, sharpening, overlay teks),
+(3) cegah **video terlalu pendek** (durasi minimum), (4) pastikan **bukan gambar statis/GIF**
+(re-encode video penuh + motion), (5) **strip metadata sumber** agar tidak terdeteksi hasil impor.
+
+**File yang terlibat:**
+- `src/config.js` — tambah `MIN_CLIP_SECONDS` + konstanta efek kreatif (crop tepi, motion, grading)
+- `src/compose.js` — pipeline baru: crop tepi (anti-watermark) + color grade + sharpen +
+  background parallax bergerak + strip metadata
+- `src/clip.js` — terapkan validasi durasi minimum
+- `README.md` — dokumentasi fitur originalitas
+
+**Langkah-langkah:**
+- [x] Update dev-todo.md (section ini)
+- [x] `src/config.js`: `MIN_CLIP_SECONDS`, `EDGE_CROP`, motion & grading constants
+- [x] `src/compose.js`: crop tepi anti-watermark pada foreground
+- [x] `src/compose.js`: color grade (contrast/saturation) + unsharp pada foreground
+- [x] `src/compose.js`: background blur PARALLAX bergerak (crop-pan pakai waktu `t`)
+- [x] `src/compose.js`: strip metadata sumber (`-map_metadata -1`)
+- [x] `src/clip.js`: tolak klip < MIN_CLIP_SECONDS
+- [x] Update README.md
+- [x] Uji end-to-end (verifikasi output bergerak, ter-grade, durasi valid)
+
+**Catatan / Risiko:**
+- Crop tepi default 4% per sisi (`EDGE_CROP`) — cukup memotong watermark sudut tanpa
+  membuang banyak konten. Bisa di-nol-kan jika sumber memang bersih.
+- Motion background pakai `crop` dengan ekspresi waktu `t` (sin/cos) — aman terhadap framerate
+  (ukuran tetap, hanya posisi yang bergeser), tidak butuh ffprobe.
+- Tidak menambah watermark/logo apa pun milik kita (justru menghindari penyebab flag).
+- Durasi minimum default 5 dtk; TikTok lebih suka klip lebih panjang, ini hanya pengaman.
