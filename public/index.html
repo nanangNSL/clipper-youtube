@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube → TikTok Clipper</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="hero">
+      <h1>🎬 YouTube → TikTok Clipper</h1>
+      <p>Potong video YouTube jadi format vertikal 9:16 dengan hook &amp; footer.</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="single">✂️ Single Clip</button>
+      <button class="tab" data-tab="bulk">📑 Bulk (CSV)</button>
+    </div>
+
+    <!-- ===== SINGLE ===== -->
+    <main class="grid tab-panel" id="panel-single">
+      <section class="panel">
+        <form id="clip-form">
+          <label>
+            URL YouTube
+            <input type="url" id="url" placeholder="https://www.youtube.com/watch?v=..." required />
+          </label>
+
+          <label>
+            Mulai (detik)
+            <input type="number" id="start" min="0" step="1" value="0" required />
+          </label>
+
+          <label>Durasi potongan</label>
+          <div class="presets" id="presets"></div>
+
+          <label class="custom-dur hidden" id="custom-dur-wrap">
+            Durasi custom (detik)
+            <input type="number" id="custom-duration" min="1" step="1" value="30" />
+          </label>
+          <p class="hint" id="duration-hint"></p>
+
+          <label>
+            Hook Title (teks atas)
+            <input type="text" id="hook" maxlength="120" placeholder="Contoh: TUNGGU SAMPAI AKHIR! 😱" />
+          </label>
+
+          <label>
+            Footer (teks bawah)
+            <input type="text" id="footer" maxlength="120" placeholder="Contoh: Follow untuk part 2 👇" />
+          </label>
+
+          <label>
+            Nama file (opsional)
+            <input type="text" id="title" maxlength="80" placeholder="Contoh: klip-keren-01" />
+          </label>
+
+          <button type="submit" id="submit-btn">✂️ Buat Klip TikTok</button>
+        </form>
+
+        <div id="status" class="status hidden"></div>
+      </section>
+
+      <section class="panel preview-panel">
+        <h2>Preview</h2>
+        <div class="phone">
+          <video id="preview" controls playsinline></video>
+          <div id="placeholder" class="placeholder">
+            <span>📱</span>
+            <p>Hasil klip akan muncul di sini</p>
+          </div>
+        </div>
+        <a id="download" class="download hidden" download>⬇️ Download Video</a>
+      </section>
+    </main>
+
+    <!-- ===== BULK ===== -->
+    <main class="tab-panel hidden" id="panel-bulk">
+      <section class="panel">
+        <h2>Bulk Clip dari CSV</h2>
+        <ol class="steps">
+          <li>Download template CSV, isi tiap baris (1 baris = 1 klip).</li>
+          <li>Kolom: <code>url, start, duration, hook, footer, title</code>.</li>
+          <li>Nama file output mengikuti kolom <code>title</code> (kosong → pakai index).</li>
+        </ol>
+
+        <div class="bulk-actions">
+          <a class="btn-secondary" href="/api/template.csv">⬇️ Download Template CSV</a>
+        </div>
+
+        <form id="bulk-form">
+          <label>
+            Upload CSV
+            <input type="file" id="csv-file" accept=".csv,text/csv" required />
+          </label>
+          <button type="submit" id="bulk-submit">🚀 Proses Semua</button>
+        </form>
+
+        <div id="bulk-status" class="status hidden"></div>
+
+        <div id="bulk-progress-wrap" class="hidden">
+          <div class="progressbar"><div id="bulk-bar" class="progressbar-fill"></div></div>
+          <p id="bulk-progress-text" class="hint"></p>
+          <a id="bulk-zip" class="download hidden" download>📦 Download Semua (ZIP)</a>
+        </div>
+
+        <div id="bulk-results" class="results"></div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <p>Gunakan hanya untuk konten yang Anda berhak gunakan (hak cipta / izin / fair use).</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

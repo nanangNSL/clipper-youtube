@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Runtime / generated
+temp/
+public/output/
+*.log
+
+# Environment & secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.json
+credentials.json
+
+# Editor / OS / local tooling
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.claude/
