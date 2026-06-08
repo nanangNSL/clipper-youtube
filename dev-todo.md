@@ -124,3 +124,21 @@ kreatif baru** (background bergerak/parallax, color grading, sharpening, overlay
   (ukuran tetap, hanya posisi yang bergeser), tidak butuh ffprobe.
 - Tidak menambah watermark/logo apa pun milik kita (justru menghindari penyebab flag).
 - Durasi minimum default 5 dtk; TikTok lebih suka klip lebih panjang, ini hanya pengaman.
+
+---
+
+## Naikkan Posisi Footer (hindari ketutup UI TikTok) — 2026-06-07
+
+**Deskripsi:** Footer di hasil video tertutup UI TikTok (caption/tombol) saat diposting.
+Naikkan posisi footer agar berada di atas zona aman UI bagian bawah.
+
+**File yang terlibat:**
+- `src/compose.js` — perbesar `bottomMargin` agar footer naik ke atas zona UI
+
+**Langkah-langkah:**
+- [x] Update dev-todo.md (section ini)
+- [x] Naikkan `bottomMargin` footer di `src/compose.js`
+
+**Catatan:**
+- UI bawah TikTok menutupi ±15–18% layar bawah (~300px dari 1920). Margin dinaikkan
+  ke ~320px agar footer tetap terlihat.

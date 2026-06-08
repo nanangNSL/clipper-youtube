@@ -91,7 +91,9 @@ function composeVideo({ rawPath, outPath, hookPng, footerPng, footerDim }) {
 
     let lastLabel = 'base';
     const topMargin = 90;
-    const bottomMargin = 110;
+    // Keep the footer above TikTok's bottom UI safe zone (caption/buttons cover
+    // roughly the bottom ~15-18% of the screen, i.e. ~300px of 1920).
+    const bottomMargin = 320;
 
     if (hookPng) {
       filters.push(`[${lastLabel}][${hookIdx}:v]overlay=(W-w)/2:${topMargin}[withhook]`);
