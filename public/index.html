@@ -16,6 +16,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="single">✂️ Single Clip</button>
       <button class="tab" data-tab="bulk">📑 Bulk (CSV)</button>
+      <button class="tab" data-tab="cookies">🍪 Cookies</button>
     </div>
 
     <!-- ===== SINGLE ===== -->
@@ -106,6 +107,40 @@
         </div>
 
         <div id="bulk-results" class="results"></div>
+      </section>
+    </main>
+
+    <!-- ===== COOKIES ===== -->
+    <main class="tab-panel hidden" id="panel-cookies">
+      <section class="panel">
+        <h2>Cookies YouTube</h2>
+        <p class="hint">
+          Server production sering diblokir YouTube (error <i>"Sign in to confirm
+          you're not a bot"</i>). Upload <code>cookies.txt</code> agar yt-dlp
+          terautentikasi.
+        </p>
+
+        <div id="cookies-state" class="status">Memuat status...</div>
+
+        <ol class="steps">
+          <li>Login youtube.com dengan <b>akun sekunder</b> di jendela <b>incognito</b>.</li>
+          <li>Export pakai extension <b>"Get cookies.txt LOCALLY"</b> (format Netscape).</li>
+          <li>Tutup jendela incognito <b>tanpa logout</b>, lalu upload file-nya di sini.</li>
+        </ol>
+
+        <form id="cookies-form">
+          <label>
+            Upload cookies.txt
+            <input type="file" id="cookies-file" accept=".txt,text/plain" required />
+          </label>
+          <button type="submit" id="cookies-submit">🍪 Upload Cookies</button>
+        </form>
+
+        <div class="bulk-actions">
+          <button type="button" class="btn-secondary hidden" id="cookies-delete">🗑️ Hapus Cookies</button>
+        </div>
+
+        <div id="cookies-status" class="status hidden"></div>
       </section>
     </main>
 

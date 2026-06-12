@@ -61,6 +61,40 @@ public/output/     # hasil video .mp4
 - Durasi klip (min/maks) & efek originalitas: konstanta di `src/config.js`
   (`MIN_CLIP_SECONDS`, `MAX_CLIP_SECONDS`, `EDGE_CROP`, `COLOR_GRADE`, `MOTION_BG`, dst.).
 
+## 🚢 Deploy Production (wajib: cookies YouTube)
+YouTube memblokir request tanpa login dari IP server/datacenter dengan error:
+
+```
+ERROR: [youtube] ...: Sign in to confirm you're not a bot.
+```
+
+Solusinya: berikan **cookies YouTube** ke yt-dlp.
+
+**Cara export cookies (sekali setup):**
+1. Gunakan **akun YouTube sekunder** (bukan akun utama — akun yang dipakai bisa
+   kena rate-limit).
+2. Buka jendela **private/incognito** di browser, login ke youtube.com.
+3. Export cookies domain youtube.com ke format **Netscape `cookies.txt`**
+   (pakai extension seperti "Get cookies.txt LOCALLY").
+4. **Tutup jendela private tersebut** tanpa logout — ini mencegah browser
+   me-rotate cookies sehingga cookies tetap valid lebih lama.
+
+**Pasang di server (pilih salah satu):**
+- **Upload lewat web UI** — buka tab **🍪 Cookies** di aplikasi, upload file
+  `cookies.txt` hasil export. Status terpasang/tidak terlihat di tab yang sama.
+- Set env `YTDLP_COOKIES=/path/ke/cookies.txt` (prioritas tertinggi, menimpa
+  hasil upload), atau
+- Taruh file `cookies.txt` di root project secara manual (sudah masuk
+  `.gitignore` — **jangan pernah commit file ini**, isinya setara password akun).
+
+**Tambahan:**
+- Pastikan yt-dlp versi terbaru — binary lama lebih sering kena bot-check.
+  Jalankan ulang `npm install` di server (youtube-dl-exec mengunduh release
+  terbaru saat install).
+- Tanpa cookies, app otomatis retry dengan player client alternatif
+  (`tv_simply`, `tv_embedded`) — kadang lolos, tapi tidak dijamin di IP datacenter.
+- Jika cookies mulai ditolak lagi, export ulang dengan langkah di atas.
+
 ## ⚠️ Catatan Hukum
 Mengunduh video YouTube tunduk pada Terms of Service YouTube. Gunakan tool ini
 **hanya untuk konten yang Anda miliki hak ciptanya, Anda punya izin, atau termasuk

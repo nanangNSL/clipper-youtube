@@ -15,6 +15,7 @@ public/output/
 *.pfx
 secrets.json
 credentials.json
+cookies.txt
 
 # Editor / OS / local tooling
 .DS_Store

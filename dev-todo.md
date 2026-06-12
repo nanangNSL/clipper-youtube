@@ -142,3 +142,73 @@ Naikkan posisi footer agar berada di atas zona aman UI bagian bawah.
 **Catatan:**
 - UI bawah TikTok menutupi ±15–18% layar bawah (~300px dari 1920). Margin dinaikkan
   ke ~320px agar footer tetap terlihat.
+
+---
+
+## Fix Bot-Check YouTube di Production (cookies + fallback client) — 2026-06-12
+
+**Deskripsi:** Di production, yt-dlp gagal dengan error
+`Sign in to confirm you're not a bot` karena IP server/datacenter diblokir YouTube.
+Solusi: (1) dukung **file cookies** (Netscape `cookies.txt`) via env `YTDLP_COOKIES`
+atau file `cookies.txt` di root project, (2) **retry otomatis** dengan player client
+alternatif (`tv_simply`, `tv_embedded`) bila kena bot-check, (3) pesan error yang
+jelas + dokumentasi cara export cookies.
+
+**File yang terlibat:**
+- `src/download.js` — deteksi cookies file, pass `--cookies`, retry dengan
+  `--extractor-args youtube:player_client=...` saat bot-check
+- `README.md` — dokumentasi setup cookies untuk production
+
+**Langkah-langkah:**
+- [x] Update dev-todo.md (section ini)
+- [x] `src/download.js`: resolve cookies file (env `YTDLP_COOKIES` → `cookies.txt` di root)
+- [x] `src/download.js`: retry chain player client saat error bot-check
+- [x] `src/download.js`: error message ramah saat semua attempt gagal
+- [x] README.md: section deploy production + cara export cookies
+- [x] Verifikasi: download 1 segmen masih jalan secara lokal (segmen 5 dtk OK)
+- [x] Tambah `cookies.txt` ke .gitignore (jangan sampai ter-commit)
+
+**Catatan / Risiko:**
+- Cookies harus diexport dari **jendela private/incognito yang lalu ditutup**
+  (sesuai wiki yt-dlp) agar tidak di-rotate browser dan tidak cepat kadaluarsa.
+- Gunakan akun YouTube sekunder — akun yang dipakai bisa terkena rate-limit.
+- yt-dlp binary harus versi baru; binary lama lebih sering kena bot-check.
+  Re-run `npm install` (youtube-dl-exec mengunduh release terbaru saat install).
+- Tanpa cookies, fallback client kadang berhasil tapi tidak dijamin di IP datacenter.
+
+---
+
+## Feature: Upload Cookies via Web UI — 2026-06-12
+
+**Deskripsi:** Menambah fitur upload `cookies.txt` lewat browser (tab baru "🍪 Cookies"),
+supaya tidak perlu SSH/upload manual ke server production. Termasuk endpoint untuk
+cek status cookies dan menghapusnya.
+
+**File yang terlibat:**
+- `src/download.js` — export `resolveCookiesFile` agar dipakai endpoint status
+- `server.js` — endpoint `GET /api/cookies` (status), `POST /api/cookies` (upload +
+  validasi format Netscape), `DELETE /api/cookies` (hapus)
+- `public/index.html` — tab baru "Cookies": status, form upload, tombol hapus, petunjuk
+- `public/app.js` — logika tab cookies (load status, upload, hapus)
+- `public/style.css` — styling kecil untuk status cookies (jika perlu)
+- `README.md` — update dokumentasi (upload via UI)
+
+**Langkah-langkah:**
+- [x] Update dev-todo.md (section ini)
+- [x] `src/download.js`: export `resolveCookiesFile`
+- [x] `server.js`: GET/POST/DELETE `/api/cookies` + validasi isi file
+- [x] `public/index.html`: tab Cookies + form
+- [x] `public/app.js`: load status, upload, hapus
+- [x] `public/style.css`: styling form cookies
+- [x] README.md: dokumentasi
+- [x] Verifikasi end-to-end: status awal → tolak file invalid → upload valid →
+      status terpasang → hapus (semua via curl, OK)
+
+**Catatan / Risiko:**
+- File disimpan ke `<root>/cookies.txt` (sudah di .gitignore).
+- Validasi isi: harus format Netscape / mengandung cookie domain youtube.com —
+  mencegah salah upload file sembarangan.
+- Jika env `YTDLP_COOKIES` diset, file env yang dipakai yt-dlp (prioritas lebih
+  tinggi) — status di UI harus menjelaskan ini.
+- UI ini tidak ber-autentikasi (sama seperti seluruh app) — siapa pun yang bisa
+  akses web bisa ganti cookies. Jangan expose app ke publik tanpa proteksi.

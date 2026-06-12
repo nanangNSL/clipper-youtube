@@ -1,10 +1,12 @@
 'use strict';
 
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const multer = require('multer');
 
-const { MAX_CLIP_SECONDS, DURATION_PRESETS } = require('./src/config');
+const { ROOT, MAX_CLIP_SECONDS, DURATION_PRESETS } = require('./src/config');
+const { resolveCookiesFile } = require('./src/download');
 const { createClip } = require('./src/clip');
 const { parseCsv, TEMPLATE_CSV } = require('./src/csv');
 const { createBulkJob, getJob, jobView } = require('./src/bulk');
@@ -61,6 +63,68 @@ app.post('/api/bulk', upload.single('csv'), (req, res) => {
     res.json({ ok: true, job });
   } catch (err) {
     console.error('[bulk error]', err.message);
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+// ---------- Cookies (auth yt-dlp untuk bypass bot-check YouTube) ----------
+const LOCAL_COOKIES = path.join(ROOT, 'cookies.txt');
+
+/** Reject files that are clearly not a Netscape cookies.txt with YouTube cookies. */
+function validateCookiesContent(text) {
+  if (/\x00/.test(text)) return 'File bukan teks (binary). Export ulang sebagai cookies.txt.';
+  const hasNetscapeRows = text
+    .split(/\r?\n/)
+    .some((line) => !line.startsWith('#') && line.split('\t').length >= 7);
+  if (!hasNetscapeRows && !/^# (Netscape|HTTP Cookie)/im.test(text)) {
+    return 'Format tidak dikenali. Gunakan format Netscape cookies.txt (extension "Get cookies.txt LOCALLY").';
+  }
+  if (!/youtube\.com/i.test(text)) {
+    return 'Tidak ada cookie domain youtube.com di file ini. Export saat berada di youtube.com.';
+  }
+  return null;
+}
+
+function cookiesStatus() {
+  const active = resolveCookiesFile();
+  const envPath = (process.env.YTDLP_COOKIES || '').trim();
+  const status = {
+    installed: Boolean(active),
+    source: null, // 'env' | 'upload'
+    envOverride: Boolean(envPath && fs.existsSync(envPath)),
+    uploadedAt: null,
+  };
+  if (active) status.source = active === LOCAL_COOKIES ? 'upload' : 'env';
+  if (fs.existsSync(LOCAL_COOKIES)) {
+    status.uploadedAt = fs.statSync(LOCAL_COOKIES).mtime.toISOString();
+  }
+  return status;
+}
+
+app.get('/api/cookies', (req, res) => {
+  res.json({ ok: true, ...cookiesStatus() });
+});
+
+app.post('/api/cookies', upload.single('cookies'), (req, res) => {
+  try {
+    if (!req.file) throw new Error('File cookies tidak ditemukan.');
+    const text = req.file.buffer.toString('utf8');
+    const invalid = validateCookiesContent(text);
+    if (invalid) throw new Error(invalid);
+    fs.writeFileSync(LOCAL_COOKIES, text, 'utf8');
+    res.json({ ok: true, ...cookiesStatus() });
+  } catch (err) {
+    console.error('[cookies error]', err.message);
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+app.delete('/api/cookies', (req, res) => {
+  try {
+    if (fs.existsSync(LOCAL_COOKIES)) fs.unlinkSync(LOCAL_COOKIES);
+    res.json({ ok: true, ...cookiesStatus() });
+  } catch (err) {
+    console.error('[cookies error]', err.message);
     res.status(400).json({ ok: false, error: err.message });
   }
 });

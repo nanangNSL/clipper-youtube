@@ -194,6 +194,8 @@ button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 }
 #bulk-form { display: flex; flex-direction: column; gap: 14px; }
 #csv-file { padding: 10px; }
+#cookies-form { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; }
+#cookies-file { padding: 10px; }
 
 .progressbar {
   width: 100%; height: 12px;

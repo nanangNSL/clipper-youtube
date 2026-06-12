@@ -18,6 +18,7 @@ document.querySelectorAll('.tab').forEach((tab) => {
     const target = tab.dataset.tab;
     $('panel-single').classList.toggle('hidden', target !== 'single');
     $('panel-bulk').classList.toggle('hidden', target !== 'bulk');
+    $('panel-cookies').classList.toggle('hidden', target !== 'cookies');
   });
 });
 
@@ -233,6 +234,85 @@ function renderJob(job) {
     })
     .join('');
 }
+
+// ---------- Cookies ----------
+function renderCookiesState(state) {
+  const el = $('cookies-state');
+  const delBtn = $('cookies-delete');
+
+  if (!state.installed) {
+    el.className = 'status error';
+    el.innerHTML = '❌ <b>Cookies belum terpasang.</b> Download dari YouTube bisa diblokir di server production.';
+  } else if (state.source === 'env') {
+    el.className = 'status success';
+    el.innerHTML =
+      '✅ <b>Cookies aktif dari env <code>YTDLP_COOKIES</code>.</b> ' +
+      'File env diprioritaskan — upload di sini tidak akan dipakai selama env diset.';
+  } else {
+    const when = state.uploadedAt ? new Date(state.uploadedAt).toLocaleString('id-ID') : '';
+    el.className = 'status success';
+    el.innerHTML = `✅ <b>Cookies terpasang</b> (upload terakhir: ${when}).`;
+  }
+  el.classList.remove('hidden');
+  delBtn.classList.toggle('hidden', !state.uploadedAt);
+}
+
+function loadCookiesState() {
+  fetch('/api/cookies')
+    .then((r) => r.json())
+    .then((data) => {
+      if (data.ok) renderCookiesState(data);
+    })
+    .catch(() => {
+      $('cookies-state').textContent = 'Gagal memuat status cookies.';
+    });
+}
+loadCookiesState();
+
+$('cookies-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const statusEl = $('cookies-status');
+  const submitBtn = $('cookies-submit');
+  const file = $('cookies-file').files[0];
+
+  if (!file) {
+    setStatus(statusEl, 'error', '⚠️ Pilih file cookies.txt dulu.');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  setStatus(statusEl, 'loading', '<span class="spinner"></span> Mengunggah cookies...');
+
+  try {
+    const fd = new FormData();
+    fd.append('cookies', file);
+    const res = await fetch('/api/cookies', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Gagal mengunggah cookies.');
+
+    renderCookiesState(data);
+    setStatus(statusEl, 'success', '✅ Cookies tersimpan. Klip berikutnya akan memakai cookies ini.');
+    $('cookies-form').reset();
+  } catch (err) {
+    setStatus(statusEl, 'error', `❌ ${err.message}`);
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+$('cookies-delete').addEventListener('click', async () => {
+  const statusEl = $('cookies-status');
+  if (!confirm('Hapus cookies yang tersimpan di server?')) return;
+  try {
+    const res = await fetch('/api/cookies', { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Gagal menghapus cookies.');
+    renderCookiesState(data);
+    setStatus(statusEl, 'success', '✅ Cookies dihapus.');
+  } catch (err) {
+    setStatus(statusEl, 'error', `❌ ${err.message}`);
+  }
+});
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) =>
