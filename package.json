@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "update-ytdlp": "node -e \"require('child_process').execFileSync(require('youtube-dl-exec').constants.YOUTUBE_DL_PATH, ['-U'], { stdio: 'inherit' })\""
   },
   "dependencies": {
     "archiver": "^7.0.1",

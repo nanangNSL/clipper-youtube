@@ -16,6 +16,7 @@ public/output/
 secrets.json
 credentials.json
 cookies.txt
+cookies.txt.*
 
 # Editor / OS / local tooling
 .DS_Store

@@ -66,34 +66,42 @@ YouTube memblokir request tanpa login dari IP server/datacenter dengan error:
 
 ```
 ERROR: [youtube] ...: Sign in to confirm you're not a bot.
+Use --cookies-from-browser or --cookies for the authentication.
 ```
 
-Solusinya: berikan **cookies YouTube** ke yt-dlp.
+**Solusi: berikan cookies YouTube yang SEGAR ke yt-dlp.**
 
-**Cara export cookies (sekali setup):**
-1. Gunakan **akun YouTube sekunder** (bukan akun utama — akun yang dipakai bisa
-   kena rate-limit).
-2. Buka jendela **private/incognito** di browser, login ke youtube.com.
-3. Export cookies domain youtube.com ke format **Netscape `cookies.txt`**
-   (pakai extension seperti "Get cookies.txt LOCALLY").
-4. **Tutup jendela private tersebut** tanpa logout — ini mencegah browser
-   me-rotate cookies sehingga cookies tetap valid lebih lama.
+**⚠️ PENTING: Cookies punya lifetime terbatas!**
+- YouTube cookies biasanya expire dalam **30-90 hari**.
+- Jika download tiba-tiba mulai gagal padahal cookies terpasang, **cookies sudah expired**.
+- Solusi: export ulang cookies baru dari browser.
+- Aplikasi akan warn jika `cookies.txt` terdeteksi tua (>60 hari).
 
-**Pasang di server (pilih salah satu):**
-- **Upload lewat web UI** — buka tab **🍪 Cookies** di aplikasi, upload file
-  `cookies.txt` hasil export. Status terpasang/tidak terlihat di tab yang sama.
-- Set env `YTDLP_COOKIES=/path/ke/cookies.txt` (prioritas tertinggi, menimpa
-  hasil upload), atau
-- Taruh file `cookies.txt` di root project secara manual (sudah masuk
-  `.gitignore` — **jangan pernah commit file ini**, isinya setara password akun).
+**Panduan lengkap export cookies:**
+👉 **Buka file `COOKIES_SETUP.md` di project root untuk langkah detail.**
 
-**Tambahan:**
-- Pastikan yt-dlp versi terbaru — binary lama lebih sering kena bot-check.
-  Jalankan ulang `npm install` di server (youtube-dl-exec mengunduh release
-  terbaru saat install).
-- Tanpa cookies, app otomatis retry dengan player client alternatif
-  (`tv_simply`, `tv_embedded`) — kadang lolos, tapi tidak dijamin di IP datacenter.
-- Jika cookies mulai ditolak lagi, export ulang dengan langkah di atas.
+Versi singkat:
+1. Install extension **"Get cookies.txt LOCALLY"** dari Chrome Web Store
+2. Login ke youtube.com dengan akun yang ingin digunakan
+3. Klik extension → "Export for this site"
+4. Save sebagai `cookies.txt`
+5. Upload ke aplikasi via tab **🍪 Cookies**, atau
+6. Set env: `YTDLP_COOKIES=/path/to/cookies.txt`, atau
+7. Taruh di root project (sudah di `.gitignore`)
+
+**Setup yang recommended:**
+- **Gunakan akun YouTube sekunder** (bukan akun utama) — akun yang aktif kena rate-limit.
+- **Login di jendela private/incognito**, export cookies, **jangan logout dari jendela itu**.
+  Ini membuat cookies valid lebih lama (YouTube tidak me-rotate cookies inactive session).
+- **Refresh cookies setiap bulan** untuk production — set reminder.
+
+**Troubleshooting:**
+- "Still getting bot-check?" → Cookies sudah expired, export ulang.
+- "Video restricted?" → Coba dengan video publik terlebih dahulu, atau YouTube mungkin
+  require akun premium untuk video itu.
+- "No formats available?" → yt-dlp mungkin outdated. Jalankan `npm install` untuk update.
+
+Untuk info lebih detail, lihat **`COOKIES_SETUP.md`**.
 
 ## ⚠️ Catatan Hukum
 Mengunduh video YouTube tunduk pada Terms of Service YouTube. Gunakan tool ini

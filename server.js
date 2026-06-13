@@ -93,11 +93,22 @@ function cookiesStatus() {
     source: null, // 'env' | 'upload'
     envOverride: Boolean(envPath && fs.existsSync(envPath)),
     uploadedAt: null,
+    ageWarning: null, // warning message if cookies look old
   };
   if (active) status.source = active === LOCAL_COOKIES ? 'upload' : 'env';
   if (fs.existsSync(LOCAL_COOKIES)) {
-    status.uploadedAt = fs.statSync(LOCAL_COOKIES).mtime.toISOString();
+    const stat = fs.statSync(LOCAL_COOKIES);
+    status.uploadedAt = stat.mtime.toISOString();
+    const ageMs = Date.now() - stat.mtime.getTime();
+    const ageDays = Math.round(ageMs / (1000 * 60 * 60 * 24));
+    if (ageDays > 60) {
+      status.ageWarning = `Cookies berusia ${ageDays} hari (>60 hari). Mungkin sudah expired. Export ulang dari browser. Lihat COOKIES_SETUP.md.`;
+    } else if (ageDays > 45) {
+      status.ageWarning = `Cookies berusia ${ageDays} hari. Akan segera expired (YouTube cookies live ~30-90 hari). Siapkan refresh.`;
+    }
   }
+  return status;
+}
   return status;
 }
 
